@@ -1222,59 +1222,39 @@ public class GoPrime {
         15 mistaches at 5' 1-4 (for probe)
         */ 
         
-        //should replace all below with an intelligent loop
-        
         double ct=0, fCt=0, rCt=0, pCt=0;
         int fCount=0, pCount=0, rCount=0, pCount5=0;
         int f2=0, r2=0, b2=0;
+        
         //forward
-        if(scores[fPos][fDir][3]>0) {
-            fCt+=primerCts[1]*scores[fPos][fDir][3];//nt 1 Ts
-            fCount++;
-        }
-        if(scores[fPos][fDir][4]>0) {
-            fCt+=primerCts[2]*scores[fPos][fDir][4];//nt 1 Tv
-            fCount++;
-        }
-        if(scores[fPos][fDir][5]>0) {
-            fCt+=primerCts[3]*scores[fPos][fDir][5];//nt 2 Ts
-            fCount++;
-        }
-        if(scores[fPos][fDir][6]>0) {
-            fCt+=primerCts[4]*scores[fPos][fDir][6];//nt 2 Tv
-            fCount++;
-        }
-        if(scores[fPos][fDir][7]>0) {
-            if(scores[fPos][fDir][9]>0) {
-                fCt+=primerCts2[5];
-                f2++;
+        for (int i = 1; i <= 8; i++){
+            int mismatchType = i + 2;
+            if ((i == 5) || (i == 6)) {
+                if(scores[fPos][fDir][mismatchType]>0) {
+                    if(scores[fPos][fDir][mismatchType + 2]>0) {
+                        fCt+=primerCts2[i];
+                        f2++;
+                    }
+                    else {
+                        fCt += primerCts[i] * scores[fPos][fDir][mismatchType];//nt 3 Ts
+                    }
+                    fCount++;
+                }
             }
-            else
-                fCt+=primerCts[5]*scores[fPos][fDir][7];//nt 3 Ts
-            
-            fCount++;
-        }
-        if(scores[fPos][fDir][8]>0) {
-            if(scores[fPos][fDir][10]>0) {
-                fCt+=primerCts2[6];
-                f2++;
+
+            if ((i == 7) || (i == 8)) {
+                if(scores[fPos][fDir][mismatchType]>0) {
+                    if(scores[fPos][fDir][i]==0) {
+                        fCt += primerCts[i] * scores[fPos][fDir][mismatchType];//nt 4 Ts
+                    }
+                    fCount++;
+                }
+            } else {
+                if (scores[fPos][fDir][mismatchType] > 0) {
+                    fCt += primerCts[i] * scores[fPos][fDir][mismatchType];//nt 1 Ts
+                    fCount++;
+                }
             }
-            else
-                fCt+=primerCts[6]*scores[fPos][fDir][8];//nt 3 Tv
-            
-            fCount++;
-        }
-        if(scores[fPos][fDir][9]>0) {
-            if(scores[fPos][fDir][7]==0)
-                fCt+=primerCts[7]*scores[fPos][fDir][9];//nt 4 Ts
-            
-            fCount++;
-        }
-        if(scores[fPos][fDir][10]>0) {
-            if(scores[fPos][fDir][8]==0)
-                fCt+=primerCts[8]*scores[fPos][fDir][10];//nt 4 Tv
-            
-            fCount++;
         }
         if(scores[fPos][fDir][0]>0) {
             fCt+=(double)scores[fPos][fDir][0]/(double)mLen*100*(double)primerCts[0];//%
@@ -1282,109 +1262,52 @@ public class GoPrime {
         }
         
         //reverse
-        if(scores[rPos][rDir][3]>0) {
-            if(scores[fPos][fDir][3]>0) {
-                rCt+=primerCts2[1]/2;//nt 1 Ts
-                fCt+=(primerCts2[1]/2-primerCts[1]);
-                b2++;
+        for (int i = 1; i <= 8; i++) {
+            int mismatchType = i + 2;
+            if ((i == 5) || (i == 6)) {
+                if (scores[rPos][rDir][mismatchType] > 0) {
+                    if (scores[fPos][fDir][mismatchType] > 0 | scores[fPos][fDir][mismatchType + 2] > 0) {//if fwd primer also has
+                        rCt += primerCts2[i] / 2;//nt 3-4 Ts
+                        fCt += (primerCts2[i] / 2 - primerCts[i]);//nt 3-4 Ts
+                        b2++;
+                    }
+                    //As we have max 2 mutations in 1-4 between primers - this if/else works
+                    else if (scores[rPos][rDir][mismatchType + 2] > 0) {//if pos 4 in rev also has
+                        rCt += primerCts2[i];
+                        r2++;
+                    } else
+                        rCt += primerCts[i] * scores[rPos][rDir][mismatchType];//nt 3 Ts
+
+                    rCount++;
+                }
             }
-            else
-                rCt+=primerCts[1]*scores[rPos][rDir][3];//nt 1 Ts
-            
-            rCount++;
-        }
-        if(scores[rPos][rDir][4]>0) {
-            if(scores[fPos][fDir][4]>0) {
-                rCt+=primerCts2[2]/2;//nt 1 Tv
-                fCt+=(primerCts2[2]/2-primerCts[2]);//nt 1 Tv
-                b2++;
+            if ((i == 7) || (i == 8)) {
+                if (scores[rPos][rDir][mismatchType] > 0) {
+                    if (scores[fPos][fDir][i] > 0 | scores[fPos][fDir][mismatchType] > 0) {
+                        rCt += primerCts2[i] / 2;//nt 3-4 Ts
+                        fCt += primerCts2[i] / 2 - primerCts[i];//nt 3-4 Ts
+                        b2++;
+                    } else if (scores[rPos][rDir][i] > 0) {
+                        //do nothing as already added the combined affect above
+                    } else {
+                        rCt += primerCts[i] * scores[rPos][rDir][mismatchType];//nt 4 Ts
+                    }
+
+                    rCount++;
+                }
+            } else {
+                if (scores[rPos][rDir][mismatchType] > 0) {
+                    if (scores[fPos][fDir][mismatchType] > 0) {
+                        rCt += primerCts2[i] / 2;//nt 1 Ts
+                        fCt += (primerCts2[i] / 2 - primerCts[i]);
+                        b2++;
+                    } else {
+                        rCt += primerCts[i] * scores[rPos][rDir][mismatchType];//nt 1 Ts
+                    }
+
+                    rCount++;
+                }
             }
-            else
-                rCt+=primerCts[2]*scores[rPos][rDir][4];//nt 1 Tv
-            
-            rCount++;
-        }
-        if(scores[rPos][rDir][5]>0) {
-            if(scores[fPos][fDir][5]>0) {
-                rCt+=primerCts2[3]/2;//nt 2 Ts
-                fCt+=(primerCts2[3]/2-primerCts[3]);//nt 2 Ts
-                b2++;
-            }
-            else
-                rCt+=primerCts[3]*scores[rPos][rDir][5];//nt 2 Ts
-            
-            rCount++;
-        }
-        if(scores[rPos][rDir][6]>0) {
-            if(scores[fPos][fDir][6]>0) {
-                rCt+=primerCts2[4]/2;//nt 2 Tv
-                fCt+=(primerCts2[4]/2-primerCts[4]);//nt 2 Tv
-                b2++;
-            }
-            else
-                rCt+=primerCts[4]*scores[rPos][rDir][6];//nt 2 Tv
-            
-            rCount++;
-        }
-        
-        if(scores[rPos][rDir][7]>0) {
-            if(scores[fPos][fDir][7]>0 | scores[fPos][fDir][9]>0) {//if fwd primer also has
-                rCt+=primerCts2[5]/2;//nt 3-4 Ts
-                fCt+=(primerCts2[5]/2-primerCts[5]);//nt 3-4 Ts
-                b2++;
-            }
-            //As we have max 2 mutations in 1-4 between primers - this if/else works
-            else if(scores[rPos][rDir][9]>0) {//if pos 4 in rev also has
-                rCt+=primerCts2[5];
-                r2++;
-            }
-            else
-                rCt+=primerCts[5]*scores[rPos][rDir][7];//nt 3 Ts
-            
-            rCount++;
-        }
-        if(scores[rPos][rDir][8]>0) {
-            if(scores[fPos][fDir][8]>0 | scores[fPos][fDir][10]>0) {
-                rCt+=primerCts2[6]/2;//nt 3-4 Tv
-                fCt+=(primerCts2[6]/2-primerCts[6]);//nt 3-4 Tv
-                b2++;
-            }
-            else if(scores[rPos][rDir][10]>0){
-                rCt+=primerCts2[6];
-                r2++;
-            }
-            else
-                rCt+=primerCts[6]*scores[rPos][rDir][8];//nt 3 Tv
-            
-            rCount++;
-        }
-        if(scores[rPos][rDir][9]>0) {
-            if(scores[fPos][fDir][7]>0 | scores[fPos][fDir][9]>0) {
-                rCt+=primerCts2[7]/2;//nt 3-4 Ts
-                fCt+=primerCts2[7]/2-primerCts[7];//nt 3-4 Ts
-                b2++;
-            }
-            else if(scores[rPos][rDir][7]>0) {
-                //do nothing as already added the combined affect above
-            }
-            else 
-                rCt+=primerCts[7]*scores[rPos][rDir][9];//nt 4 Ts
-            
-            rCount++;
-        }
-        if(scores[rPos][rDir][10]>0) {
-            if(scores[fPos][fDir][8]>0 | scores[fPos][fDir][10]>0) {
-                rCt+=primerCts2[8]/2;//nt 3-4 Tv
-                fCt+=primerCts2[8]/2-primerCts[8];//nt 3-4 Tv
-                b2++;
-            }
-            else if(scores[rPos][rDir][8]>0) {
-                //do nothing as already added the combined affect above
-            }
-            else
-                rCt+=primerCts[8]*scores[rPos][rDir][10];//nt 4 Tv
-            
-            rCount++;
         }
         if(scores[rPos][rDir][0]>0) {
             rCt+=(double)scores[rPos][rDir][0]/(double)mLen*100*(double)primerCts[0];//%
